@@ -132,6 +132,7 @@ NET = {
       G = m.g;
       UI.viewer = 1;
       if (first) {
+        bgm(true);
         closeOnline();
         $('#title').hidden = true;
         $('#game').hidden = false;
@@ -145,6 +146,7 @@ NET = {
       if (G.winner != null && $('#result').hidden) showResult();
     } else if (m.t === 'fx') {
       if (m.name === 'toast') toast(...m.args);
+      else if (m.name === 'sfx') sfx(m.args[0]);
       else if (m.name === 'mark') markLocal(...m.args);
       else if (m.name === 'fxPip') fxPip(...m.args);
       else {

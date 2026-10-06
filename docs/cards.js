@@ -248,7 +248,7 @@ const CARD_DB = {
   zombie: {
     id: 'zombie', name: 'ゾンビ', tribe: 'マイクラ', type: 'monster', cost: 1, power: 1000,
     img: 'cards/zombie.jpg', unbreakable: true,
-    text: 'このモンスターはわなや効果では破壊されない（バトルで負けたときは破壊される）。',
+    text: 'このモンスターは破壊されない（バトルで負けても、わなや効果でも破壊されない）。',
   },
 
   sarabada: {
@@ -476,16 +476,43 @@ const CARD_DB = {
   },
 };
 
-/* デッキ（エネルギー10枚＋通常カード15枚） */
+/* デッキ（エネルギー10枚＋通常カード15枚）
+ * デッキ1・2は写真のカードそのまま（ウィザースケルトンは絵ちがいの2枚） */
 const DECKS = [
   {
-    name: 'デッキ1', key: '会長リュー・ウィザー',
+    name: 'デッキ1', key: '写真1のカード',
     cards: [['energy', 10], ['wither', 1], ['witherskel', 2], ['inuno', 1], ['obakuso', 1], ['hikakin', 1], ['hikakin2', 1],
       ['kaicho', 1], ['robo', 1], ['spkaicho', 1], ['gucha', 1], ['arubaito', 1], ['deadattacker', 1], ['saiaku', 1], ['akizawa', 1]],
   },
   {
-    name: 'デッキ2', key: 'ゾンビ・モリのくま',
+    name: 'デッキ2', key: '写真2のカード',
     cards: [['energy', 10], ['apanman', 1], ['bochi', 1], ['zombie', 1], ['sarabada', 1], ['ilovld', 1], ['potion', 1], ['wanada', 1],
       ['mattekure', 1], ['cake', 1], ['naga', 1], ['morinokuma', 1], ['buta', 1], ['akira', 1], ['shoki', 1], ['manhole', 1]],
+  },
+  /* ───── デモ用デッキ（いまのカードを組み合わせたもの。同じカードは2枚まで） ───── */
+  {
+    name: 'マイクラ軍団', key: 'ウィザースケルトンで墓地をためてウィザー',
+    cards: [['energy', 10], ['witherskel', 2], ['zombie', 2], ['buta', 2], ['hikakin', 2], ['wither', 1],
+      ['potion', 2], ['manhole', 2], ['shoki', 1], ['deadattacker', 1]],
+  },
+  {
+    name: 'ゴーストのいたずら', key: 'ゴーストとわなで相手をじゃまする',
+    cards: [['energy', 10], ['obakuso', 2], ['bochi', 2], ['wanada', 2], ['mattekure', 2], ['deadattacker', 2],
+      ['saiaku', 2], ['manhole', 2], ['ilovld', 1]],
+  },
+  {
+    name: 'にんげん会議', key: '手札とエネルギーをふやして重ねる',
+    cards: [['energy', 10], ['arubaito', 2], ['kaicho', 2], ['spkaicho', 1], ['naga', 2], ['akira', 2],
+      ['sarabada', 2], ['robo', 1], ['cake', 2], ['akizawa', 1]],
+  },
+  {
+    name: 'エネルギー全開', key: '会長ロボとSP会長に一気につける',
+    cards: [['energy', 10], ['robo', 2], ['spkaicho', 2], ['obakuso', 2], ['gucha', 2], ['deadattacker', 2],
+      ['kaicho', 1], ['arubaito', 2], ['akizawa', 2]],
+  },
+  {
+    name: '鉄壁と山札切れ', key: '守りながら相手の山札をけずる',
+    cards: [['energy', 10], ['apanman', 2], ['zombie', 2], ['morinokuma', 2], ['mattekure', 2], ['sarabada', 2],
+      ['manhole', 2], ['saiaku', 1], ['shoki', 2]],
   },
 ];

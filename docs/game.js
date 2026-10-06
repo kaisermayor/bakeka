@@ -11,7 +11,7 @@ const nm = c => def(c).short || def(c).name;
 const RULES = { energy: 10, normal: 15, maxCopies: 2, life: 3, hand: 3, slots: 3 };
 const TYPE_LABEL = { monster: 'モンスター', magic: 'まほう', trap: 'わな', equip: 'そうび', field: 'フィールド', energy: 'エネルギー' };
 const PHASES = [
-  { id: 'main', label: 'メイン', hint: 'カードを使う → エネルギーをつける → 攻撃（ドラッグで進む）' },
+  { id: 'main', label: 'メイン', hint: 'カードを使う → エネルギー → 攻撃' },
   { id: 'energy', label: 'エネルギー', hint: 'エネルギーをモンスターへ（1体1枚まで）' },
   { id: 'attack', label: '攻撃', hint: 'モンスターを相手へドラッグして攻撃' },
 ];
@@ -76,6 +76,7 @@ function makePlayer(i, o) {
 
 function newGame(o) {
   UI.opts = o;
+  bgm(true);
   UI.lastViewer = null;
   G = { mode: o.mode, hide: o.hide, players: [0, 1].map(i => makePlayer(i, o)), turn: 0, current: 0, phase: 'start', winner: null, reason: '', log: [] };
   G.players.forEach((p, i) => {
@@ -191,7 +192,7 @@ function clearSlot(pi, s) {
 function destroy(pi, s, why = 'effect') {
   const p = G.players[pi], m = p.mons[s];
   if (!m) return false;
-  if (why !== 'battle' && !breakable(pi, s)) {
+  if (!breakable(pi, s)) { // ゾンビなどは、バトルでも効果でも破壊されない
     log(`「${nm(m.c)}」は破壊されない！`);
     return false;
   }
@@ -300,6 +301,7 @@ async function startTurn(first = false) {
   if (G.mode === 'hot') await handTo(G.current, `${p.name}のターン`, true);
   else if (!first) toast(`${p.name}のターン`, 'big');
   log(`── ${G.turn}ターン目：${p.name} ──`);
+  sfx('turn', true);
   render();
   await sleep(900);
 
@@ -453,6 +455,7 @@ async function useCard(pi, uid, { free = false, from = 'hand', slot = null } = {
       take(zone, uid);
       log(`${p.name}はまほう「${nm(c)}」を使った`);
       toast(`まほう「${nm(c)}」`);
+      sfx('magic', true);
       render();
       await sleep(900);
       const r = d.onCast ? await d.onCast(API, pi) : null;
@@ -613,30 +616,36 @@ async function attack(pi, slot, target) {
     }
   }
 
-  if (target === 'player') {
-    const blockers = slotsOf(o).filter(i => o.mons[i].energy.length);
-    if (blockers.length) {
-      const b = await ask(oi, {
-        title: '防御する？',
-        text: `${p.name}の「${aName}」（パワー${fmt(ap)}）が攻撃してきた。` +
-          (o.life.length ? `防御しないとライフガードが${Math.min(Math.floor(ap / 1000), o.life.length)}枚壊れます。`
-            : directBlocked(oi) ? '' : 'ライフガードがないので、防御しないと負けです！') +
-          '防御するとモンスターのエネルギーを1枚使います。',
-        options: [
-          ...blockers.map(i => ({ card: o.mons[i].c, label: `${nm(o.mons[i].c)}（パワー${fmt(power(oi, i))}）で防御`, value: i })),
-          { label: '防御しない', value: -1 },
-        ],
-        ai: () => aiBlock(oi, ap, blockers),
-      });
-      if (b >= 0) {
-        o.egrave.push(o.mons[b].energy.pop());
-        log(`${o.name}は「${nm(o.mons[b].c)}」で防御した`);
-        toast(`「${nm(o.mons[b].c)}」が防御！`);
-        await battle(pi, slot, oi, b);
-        await handTo(G.current);
-        return;
-      }
+  // ブロック：エネルギーのついたモンスターが1枚使って、攻撃を自分とのバトルに変える
+  // （プレイヤーへの攻撃でも、モンスターへの攻撃でもできる。狙われたモンスター自身は除く）
+  const blockers = slotsOf(o).filter(i => o.mons[i].energy.length && i !== target);
+  if (blockers.length && p.mons[slot]) {
+    const what = target === 'player'
+      ? (o.life.length ? `ブロックしないとライフガードが${Math.min(Math.floor(ap / 1000), o.life.length)}枚壊れます。`
+        : directBlocked(oi) ? '' : 'ライフガードがないので、ブロックしないと負けです！')
+      : `狙われているのは「${nm(o.mons[target].c)}」（パワー${fmt(power(oi, target))}）です。`;
+    const b = await ask(oi, {
+      title: 'ブロックする？',
+      text: `${p.name}の「${aName}」（パワー${fmt(ap)}）が攻撃してきた。${what}ブロックすると、そのモンスターのエネルギーを1枚使って、攻撃してきたモンスターとバトルします。`,
+      options: [
+        ...blockers.map(i => ({ card: o.mons[i].c, label: `${nm(o.mons[i].c)}（パワー${fmt(power(oi, i))}）でブロック`, value: i })),
+        { label: 'ブロックしない', value: -1 },
+      ],
+      ai: () => (target === 'player' ? aiBlock(oi, ap, blockers) : aiBlockMon(oi, ap, target, blockers)),
+    });
+    if (b >= 0) {
+      o.egrave.push(o.mons[b].energy.pop());
+      log(`${o.name}は「${nm(o.mons[b].c)}」でブロックした`);
+      toast(`「${nm(o.mons[b].c)}」がブロック！`);
+      await battle(pi, slot, oi, b);
+      settle();
+      render();
+      await handTo(G.current);
+      return;
     }
+  }
+
+  if (target === 'player') {
     if (!o.life.length) {
       if (directBlocked(oi)) {
         log(`このターン、${o.name}はダイレクトアタックを受けない`);
@@ -731,8 +740,20 @@ const ACTIONS = { useCard: (...a) => useCard(...a), playerAttach: (...a) => play
 
 /* ───────── CPU ───────── */
 
+// モンスターが狙われたとき：狙われたモンスターが負けそうで、勝てるモンスターがいればブロック
+function aiBlockMon(oi, ap, target, blockers) {
+  if (power(oi, target) > ap || !breakable(oi, target)) return -1;
+  const safe = blockers.find(i => !breakable(oi, i));
+  if (safe != null) return safe;
+  const byPow = [...blockers].sort((a, b) => power(oi, a) - power(oi, b));
+  const win = byPow.find(i => power(oi, i) > ap);
+  return win ?? -1;
+}
+
 function aiBlock(oi, ap, blockers) {
   const o = G.players[oi];
+  const safe = blockers.find(i => !breakable(oi, i));
+  if (safe != null && !(o.life.length && Math.floor(ap / 1000) === 0)) return safe;
   const byPow = [...blockers].sort((a, b) => power(oi, a) - power(oi, b));
   if (!o.life.length) {
     if (directBlocked(oi)) return -1;
@@ -742,7 +763,28 @@ function aiBlock(oi, ap, blockers) {
   if (win != null) return win;
   const tie = byPow.find(i => power(oi, i) === ap);
   if (tie != null && ap >= 2000) return tie;
+  // この攻撃でライフガードが全部こわれるなら、いちばん弱いモンスターを差し出して守る
+  if (Math.floor(ap / 1000) >= o.life.length) return byPow[0];
   return -1;
+}
+
+// 相手がいちばん上手にブロックしても、この攻撃回数でダイレクトアタックまで届くか
+function aiLethal(pi) {
+  const oi = 1 - pi, o = G.players[oi], p = G.players[pi];
+  if (directBlocked(oi)) return false;
+  const attacks = [];
+  for (let s = 0; s < 3; s++) if (canAttack(pi, s)) for (let k = 0; k < p.mons[s].energy.length; k++) attacks.push(power(pi, s));
+  let blocks = slotsOf(o).reduce((t, i) => t + o.mons[i].energy.length, 0);
+  if (o.trap && def(o.trap.c).trigger === 'opponentAttack') blocks += o.trap.c.id === 'saiaku' ? 99 : 1;
+  if (attacks.length <= blocks) return false;
+  // 相手は強い攻撃からブロックすると考えて、残りの攻撃で届くかを数える
+  const rest = attacks.sort((a, b) => b - a).slice(blocks);
+  let life = o.life.length;
+  for (const a of rest) {
+    if (life === 0) return true;
+    life -= Math.min(life, Math.floor(a / 1000));
+  }
+  return false;
 }
 
 async function cpuTurn() {
@@ -784,6 +826,14 @@ async function cpuTurn() {
   render();
   await beat(500);
   for (let guard = 0; guard < 40; guard++) {
+    // 勝てる計算なら、プレイヤーを攻撃し続ける（ブロックで失うものが少ない、エネルギー1枚のモンスターから）
+    if (aiLethal(pi)) {
+      const order = [0, 1, 2].filter(s => canAttack(pi, s))
+        .sort((a, b) => p.mons[a].energy.length - p.mons[b].energy.length || power(pi, b) - power(pi, a));
+      await attack(pi, order[0], 'player');
+      await beat(500);
+      continue;
+    }
     let best = null;
     for (let s = 0; s < 3; s++) {
       if (!canAttack(pi, s)) continue;
@@ -794,11 +844,12 @@ async function cpuTurn() {
         if (!x) return;
         const dp = power(oi, t);
         let score = -1;
-        if (ap > dp) score = 50 + Math.min(dp, 5000) / 100;
+        if (!breakable(oi, t)) return; // 倒せない相手は狙わない
+        if (ap > dp) score = 50 + Math.min(dp, 5000) / 100 + x.energy.length * 8; // エネルギーのついた相手を先に倒す
         else if (ap === dp && cardValue(x.c) > cardValue(m.c)) score = 10;
         if (score > 0 && (!best || score + bias > best.score)) best = { s, t, score: score + bias };
       });
-      const strongBlock = o.mons.some((x, t) => x && x.energy.length && power(oi, t) >= ap);
+      const strongBlock = o.mons.some((x, t) => x && x.energy.length && power(oi, t) > ap);
       let ps = -1;
       if (!o.life.length) ps = strongBlock || directBlocked(oi) ? -1 : 1000;
       else if (!strongBlock && ap >= 1000) ps = 30 + Math.min(Math.floor(ap / 1000), o.life.length) * 10;
@@ -936,6 +987,7 @@ function animateDiff(before) {
         if (pile) drawFrom(el, pile, src.pile === 'deck', (k++) * 160);
         else el.animate([{ transform: 'translateY(50px) scale(.85)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500, easing: 'cubic-bezier(.2,.8,.2,1)' });
       } else {
+        sfx(el.dataset.z === 'mon' ? 'summon' : 'set');
         el.animate([
           { transform: 'translateY(-40px) scale(1.4) rotate(-8deg)', opacity: 0, filter: 'brightness(1.8)' },
           { transform: 'scale(.94)', opacity: 1, offset: 0.65 },
@@ -959,6 +1011,7 @@ function animateDiff(before) {
 
 // 山札から引いたカード：裏向きで飛んできて、手札でめくれる
 function drawFrom(el, pile, faceDown, delay) {
+  setTimeout(() => sfx('draw'), delay);
   const to = el.getBoundingClientRect(), f = pile.getBoundingClientRect();
   if (faceDown) {
     const g = document.createElement('div');
@@ -988,6 +1041,7 @@ function drawFrom(el, pile, faceDown, delay) {
 
 // 相手が引いたとき：裏向きのカードが山札から相手の手札（名前のところ）へ飛ぶ
 function flyToHand(pi, pileName, n) {
+  sfx('draw');
   if (REDUCED) return;
   const pile = $(`#game [data-zone="${pileName}"][data-p="${pi}"]`), info = $(`#game .pinfo[data-p="${pi}"]`);
   if (!pile || !info) return;
@@ -1008,6 +1062,7 @@ function flyToHand(pi, pileName, n) {
 
 // 場から消えたカードを、光ってくずれるように消す
 function ghost(b) {
+  if (b.z === 'mon') sfx('destroy');
   const g = document.createElement('div');
   g.className = 'fx-ghost';
   g.style.cssText = `left:${b.r.left}px;top:${b.r.top}px;width:${b.r.width}px;height:${b.r.height}px`;
@@ -1025,6 +1080,8 @@ async function fxAttack(pi, s, target) {
   NET?.fx('fxAttack', [pi, s, target]);
   const a = monEl(pi, s);
   const t = target === 'player' ? $(`#game .lgrow[data-p="${1 - pi}"]`) : monEl(1 - pi, target);
+  sfx('attack');
+  setTimeout(() => sfx('hit'), 560);
   if (!a || !t || REDUCED) return;
   const A = center(a), T = center(t);
   const dx = T.x - A.x, dy = T.y - A.y;
@@ -1043,6 +1100,7 @@ async function fxAttack(pi, s, target) {
 async function fxClash(ai, as, di, ds) {
   NET?.fx('fxClash', [ai, as, di, ds]);
   const a = monEl(ai, as), d = monEl(di, ds);
+  sfx('clash');
   if (!a || !d || REDUCED) return;
   const A = center(a), D = center(d);
   const dx = (D.x - A.x) * 0.35, dy = (D.y - A.y) * 0.35;
@@ -1063,6 +1121,7 @@ async function fxLife(oi, n) {
   NET?.fx('fxLife', [oi, n]);
   const cells = [...document.querySelectorAll(`#game .lgrow[data-p="${oi}"] .cell`)].filter(c => c.querySelector('.back')).slice(-n);
   const target = oi === UI.viewer ? $('#hand') : $(`#game .pinfo[data-p="${oi}"]`);
+  for (let i = 0; i < Math.max(1, cells.length); i++) setTimeout(() => sfx('life'), i * 160);
   if (!cells.length || !target || REDUCED) return;
   const T = center(target);
   await Promise.all(cells.map((c, k) => {
@@ -1079,6 +1138,7 @@ async function fxLife(oi, n) {
 async function fxTrap(pi) {
   NET?.fx('fxTrap', [pi]);
   const el = $(`#game .aux[data-zone="trap"][data-p="${pi}"]`);
+  sfx('trap');
   if (!el) return;
   el.style.zIndex = 20;
   await anim(el, [
@@ -1092,6 +1152,7 @@ async function fxTrap(pi) {
 
 async function fxDirect() {
   NET?.fx('fxDirect', []);
+  sfx('direct');
   const flash = document.createElement('div');
   flash.className = 'flash';
   $('#fx').appendChild(flash);
@@ -1101,6 +1162,7 @@ async function fxDirect() {
 
 function fxPip(pi, s) {
   NET?.fx('fxPip', [pi, s]);
+  sfx('energy');
   const pips = monEl(pi, s)?.querySelectorAll('.pip');
   if (pips && pips.length) anim(pips[pips.length - 1], [{ transform: 'scale(0)' }, { transform: 'scale(1.8)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 500 });
 }
@@ -1211,18 +1273,16 @@ function sideHTML(p, top) {
   if (top) piles.reverse();
   const pileRow = `<div class="pilerow">${piles.join('')}</div>`;
   const grid = `<div class="grid3">${top ? pileRow + lifeRow : lifeRow + pileRow}</div>`;
-  const aux = [
-    `<div class="aux" data-zone="field" data-p="${p.i}" ${p.field ? `data-cid="${p.field.uid}" data-z="aux"` : ''}>${p.field ? cardHTML(p.field) : emptyHTML('フィールド')}</div>`,
-    grid,
-    `<div class="aux" data-zone="trap" data-p="${p.i}" ${p.trap ? `data-cid="${p.trap.c.uid}" data-z="aux"` : ''}>${trapHTML(p)}</div>`,
-  ];
-  if (top) aux.reverse();
+  // わなとフィールドはモンスター置き場の左右（自分は左がフィールド・右がわな、相手は逆）
+  const fieldAux = `<div class="aux" data-zone="field" data-p="${p.i}" ${p.field ? `data-cid="${p.field.uid}" data-z="aux"` : ''}>${p.field ? cardHTML(p.field) : emptyHTML('フィールド')}</div>`;
+  const trapAux = `<div class="aux" data-zone="trap" data-p="${p.i}" ${p.trap ? `data-cid="${p.trap.c.uid}" data-z="aux"` : ''}>${trapHTML(p)}</div>`;
+  const rowAItems = top ? [trapAux, ...mons, fieldAux] : [fieldAux, ...mons, trapAux];
   const info = `<div class="pinfo ${p.i ? 'p2' : 'p1'} ${G.current === p.i ? 'active' : ''}" data-p="${p.i}">
       <b>${esc(p.name)}</b><span>手札 ${p.hand.length}</span>${top ? `<span class="minihand">${p.hand.map(() => '<i></i>').join('')}</span>` : ''}
       ${p.noDirect === G.turn ? '<span class="guard">ダイレクトアタック無効</span>' : ''}
     </div>`;
-  const a = `<div class="row rowA">${mons.join('')}</div>`;
-  const b = `<div class="row rowB">${aux.join('')}</div>`;
+  const a = `<div class="row rowA">${rowAItems.join('')}</div>`;
+  const b = `<div class="row rowB">${grid}</div>`;
   return top ? info + b + a : a + b + info;
 }
 
@@ -1405,15 +1465,75 @@ function onZone(ds) {
         });
       break;
     case 'egrave': toast(`エネルギー墓地：${p.egrave.length}枚`); break;
-    case 'deck': toast(`山札：残り${p.deck.length}枚`); break;
+    case 'deck':
+      if (pi === UI.viewer && !p.cpu) openDeckView(`${p.name}の山札（残り${p.deck.length}枚）`, '順番はわかりません', [{ label: '', ids: p.deck.map(c => c.id) }]);
+      else toast(`山札：残り${p.deck.length}枚`);
+      break;
     case 'life': toast(`ライフガード：残り${p.life.length}枚`); break;
   }
+}
+
+/* ───────── デッキの中身 ───────── */
+
+const TYPE_ORDER = { monster: 0, magic: 1, trap: 2, equip: 3, field: 4, energy: 5 };
+
+function deckGroups(ids) {
+  const m = new Map();
+  for (const id of ids) m.set(id, (m.get(id) || 0) + 1);
+  return [...m].sort((a, b) => {
+    const A = CARD_DB[a[0]], B = CARD_DB[b[0]];
+    return TYPE_ORDER[A.type] - TYPE_ORDER[B.type] || (A.cost === Infinity ? 99 : A.cost) - (B.cost === Infinity ? 99 : B.cost);
+  });
+}
+
+// tabs: [{label, ids}]。対戦中の山札は1つだけ
+function openDeckView(title, note, tabs, start = 0) {
+  const box = $('#deckview');
+  const draw = i => {
+    const groups = deckGroups(tabs[i].ids);
+    const counts = Object.entries(TYPE_LABEL).map(([t, label]) => {
+      const n = groups.filter(([id]) => CARD_DB[id].type === t).reduce((s, [, k]) => s + k, 0);
+      return n ? `${label} ${n}` : '';
+    }).filter(Boolean).join('　');
+    box.innerHTML = `
+      <div class="sheet split" role="dialog" aria-modal="true">
+        <button class="x" data-dv="close" aria-label="とじる">×</button>
+        <div class="sheet-body">
+          <h2>${esc(title)}</h2>
+          ${tabs.length > 1 ? `<div class="seg dvtabs">${tabs.map((t, k) => `<button data-dv="tab${k}" aria-pressed="${k === i}">${esc(t.label)}</button>`).join('')}</div>` : ''}
+          <p class="meta">${tabs[i].ids.length}枚　${esc(counts)}${note ? '　' + esc(note) : ''}</p>
+          <div class="dv-grid">${groups.map(([id, n]) => `
+            <button class="dv-item" data-dv="card:${id}">${cardHTML({ uid: -1, id })}<b class="dv-count">×${n}</b><span class="dv-name">${esc(CARD_DB[id].short || CARD_DB[id].name)}</span></button>`).join('')}</div>
+        </div>
+        <div class="btns"><button class="btn ghost" data-dv="close">とじる</button></div>
+      </div>`;
+  };
+  draw(start);
+  box.hidden = false;
+  box.onclick = e => {
+    const k = e.target.closest('[data-dv]')?.dataset.dv;
+    if (!k) { if (e.target === box) box.hidden = true; return; }
+    if (k === 'close') box.hidden = true;
+    else if (k.startsWith('tab')) draw(+k.slice(3));
+    else if (k.startsWith('card:')) infoSheet({ uid: -1, id: k.slice(5) }, '', []);
+  };
+}
+
+function deckIds(deck) {
+  return deck.cards.flatMap(([id, n]) => Array(n).fill(id));
+}
+
+function openTitleDecks() {
+  openDeckView('デッキの中身', '', DECKS.map(d => ({ label: `${d.name}（${d.key}）`, ids: deckIds(d) })), +$('#deck1').value || 0);
 }
 
 /* ───────── 結果・タイトル ───────── */
 
 function showResult() {
   const w = G.players[G.winner];
+  bgm(false);
+  const lost = G.mode === 'cpu' ? w.cpu : G.mode === 'online' ? G.winner !== UI.viewer : false;
+  sfx(lost ? 'lose' : 'win');
   const title = G.mode === 'cpu' ? (w.cpu ? 'まけ…' : 'かち！') : G.mode === 'online' ? (G.winner === UI.viewer ? 'かち！' : 'まけ…') : `${w.name}の勝ち！`;
   $('#restitle').textContent = title;
   $('#restitle').className = G.winner ? 'p2' : 'p1';
@@ -1423,6 +1543,7 @@ function showResult() {
 
 function showTitle() {
   G = null;
+  bgm(false);
   $('#game').hidden = true;
   $('#result').hidden = true;
   $('#modal').hidden = true;
@@ -1455,6 +1576,7 @@ function setup() {
   };
   $('#totitle').onclick = () => { NET?.leave(); showTitle(); };
   document.querySelectorAll('[data-rules]').forEach(b => { b.onclick = () => { $('#rules').hidden = false; }; });
+  $('#deckbtn').onclick = openTitleDecks;
   $('#rulesclose').onclick = () => { $('#rules').hidden = true; };
   $('#logbtn').onclick = () => { const lp = $('#logpanel'); lp.hidden = !lp.hidden; if (!lp.hidden) renderLog(); };
   $('#logline').onclick = $('#logbtn').onclick;

@@ -12,7 +12,7 @@ head, body = src[:cut], src[cut:]
 page = ('<!doctype html>\n<html lang="ja">\n<head>\n<meta charset="utf-8">\n' + head
         + '<style>html, body { margin: 0; } img { max-width: 100%; }</style>\n</head>\n<body>\n' + body + '</body>\n</html>\n')
 (docs / 'index.html').write_text(page, encoding='utf8')
-for f in ['cards.js', 'game.js', 'online.js']:
+for f in ['cards.js', 'game.js', 'sound.js', 'online.js']:
     shutil.copy(root / f, docs / f)
 (docs / 'cards').mkdir()
 for f in (root / 'cards').glob('*.jpg'):
