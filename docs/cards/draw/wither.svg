@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b1f1f"/><stop offset="1" stop-color="#250808"/></linearGradient></defs><rect width="250" height="150" fill="url(#bg)"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="125" cy="80" rx="105" ry="62" fill="none" stroke="#b57cff" stroke-width="4" stroke-dasharray="8 10" opacity=".8"/>
+<rect x="119" y="62" width="12" height="80" fill="#8a8a8a"/>
+<rect x="98" y="92" width="54" height="9" rx="3" fill="#8a8a8a"/>
+<rect x="102" y="108" width="46" height="9" rx="3" fill="#8a8a8a"/>
+<rect x="106" y="124" width="38" height="8" rx="3" fill="#8a8a8a"/>
+<rect x="52" y="58" width="146" height="13" rx="4" fill="#9a9a9a"/>
+<rect x="98" y="14" width="54" height="48" rx="4" fill="#262626"/>
+<rect x="40" y="38" width="38" height="34" rx="3" fill="#262626"/>
+<rect x="172" y="38" width="38" height="34" rx="3" fill="#262626"/>
+</g>
+<rect x="106" y="30" width="15" height="7" fill="#9ff3ff"/><rect x="129" y="30" width="15" height="7" fill="#9ff3ff"/>
+<rect x="110" y="46" width="30" height="5" fill="#111"/>
+<rect x="46" y="49" width="10" height="5" fill="#9ff3ff"/><rect x="62" y="49" width="10" height="5" fill="#9ff3ff"/>
+<rect x="178" y="49" width="10" height="5" fill="#9ff3ff"/><rect x="194" y="49" width="10" height="5" fill="#9ff3ff"/>
+</svg>

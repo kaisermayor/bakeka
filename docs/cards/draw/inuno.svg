@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e7f4d8"/><stop offset="1" stop-color="#b9dc91"/></linearGradient></defs><rect width="250" height="150" fill="url(#bg)"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="120" cy="104" rx="56" ry="24" fill="#fff"/>
+<ellipse cx="108" cy="98" rx="12" ry="8" fill="#3a3a3a" stroke="none"/><ellipse cx="140" cy="110" rx="10" ry="7" fill="#3a3a3a" stroke="none"/>
+<path d="M82,124v20M100,126v18M140,126v18M160,122v20" stroke-width="7"/>
+<path d="M174,96 q22,-6 26,20" fill="none" stroke-width="5"/>
+<ellipse cx="44" cy="58" rx="12" ry="20" fill="#d7b48a" transform="rotate(-25 44 58)"/>
+<ellipse cx="100" cy="58" rx="12" ry="20" fill="#d7b48a" transform="rotate(25 100 58)"/>
+<circle cx="72" cy="66" r="30" fill="#fff"/>
+<circle cx="61" cy="58" r="9" fill="#fff"/><circle cx="83" cy="58" r="9" fill="#fff"/>
+<circle cx="61" cy="58" r="4" fill="none" stroke-width="2"/><circle cx="83" cy="58" r="4" fill="none" stroke-width="2"/>
+<ellipse cx="72" cy="82" rx="16" ry="11" fill="#f2a3a3"/>
+<circle cx="66" cy="81" r="2.5" fill="#2b2520" stroke="none"/><circle cx="78" cy="81" r="2.5" fill="#2b2520" stroke="none"/>
+<path d="M68,93 v9 q4,4 8,0 v-9" fill="#ff6f6f"/>
+<g stroke="#2b2520" stroke-width="3" stroke-linejoin="round"><path d="M150,44 l-10,18 l20,-15" fill="#fff"/><rect x="130" y="14" width="108" height="34" rx="17.0" fill="#fff"/><path d="M151,45 l-8,14 l15,-12" fill="#fff" stroke="none"/></g><text x="184.0" y="36.76" text-anchor="middle" font-size="16" font-family="Hiragino Maru Gothic ProN, Yu Gothic, Meiryo, sans-serif" font-weight="700" fill="#2b2520" stroke="none">くわっ!</text></g></svg>

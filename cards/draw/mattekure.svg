@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3e8ff"/><stop offset="1" stop-color="#d5bdf5"/></linearGradient></defs><rect width="250" height="150" fill="url(#bg)"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M125,140 c-60,-30 -70,-80 -36,-90 c20,-6 32,8 36,20 c4,-12 16,-26 36,-20 c34,10 24,60 -36,90z" fill="#ffb3cf"/>
+<path d="M30,60 q0,-30 22,-30 q22,0 22,30 v40 l-7,-6 l-7,6 l-8,-6 l-8,6 l-7,-6 l-7,6z" fill="#fff"/>
+<circle cx="45" cy="56" r="3" fill="#2b2520"/><circle cx="59" cy="56" r="3" fill="#2b2520"/>
+<path d="M74,64 l18,-14" stroke-width="5"/><path d="M88,40 v18 M94,42 v16 M100,46 v12" stroke-width="3"/>
+<path d="M176,64 q0,-26 20,-26 q20,0 20,26 v34 l-6,-5 l-7,5 l-7,-5 l-7,5 l-6,-5 l-7,5z" fill="#fff"/>
+<circle cx="190" cy="62" r="3" fill="#2b2520"/><circle cx="202" cy="62" r="3" fill="#2b2520"/>
+<path d="M190,74 q6,-4 12,0" fill="none"/>
+<g stroke="#2b2520" stroke-width="3" stroke-linejoin="round"><path d="M96,34 l-10,18 l20,-15" fill="#fff"/><rect x="84" y="10" width="82" height="28" rx="14.0" fill="#fff"/><path d="M97,35 l-8,14 l15,-12" fill="#fff" stroke="none"/></g><text x="125.0" y="29.04" text-anchor="middle" font-size="14" font-family="Hiragino Maru Gothic ProN, Yu Gothic, Meiryo, sans-serif" font-weight="700" fill="#2b2520" stroke="none">まって!</text></g></svg>

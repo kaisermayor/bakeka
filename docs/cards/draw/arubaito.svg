@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0f3ef"/><stop offset="1" stop-color="#a9dcd1"/></linearGradient></defs><rect width="250" height="150" fill="url(#bg)"/><rect y="0" width="250" height="18" fill="#2e9c8a"/><rect y="18" width="250" height="6" fill="#f2c94c"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M100,82 h50 l8,64 h-66z" fill="#fff"/>
+<path d="M104,92 h42 v54 h-42z" fill="#3fae6a"/>
+<path d="M100,88 L76,112 M150,88 L176,104" stroke-width="7"/>
+<rect x="160" y="96" width="44" height="8" rx="3" fill="#b07a45"/>
+<circle cx="172" cy="90" r="7" fill="#f6d365"/><circle cx="190" cy="90" r="7" fill="#e85d5d"/>
+<circle cx="125" cy="62.4" r="22.4" fill="#fde3c3"/><circle cx="116.6" cy="58.2" r="3.08" fill="#2b2520" stroke="none"/><circle cx="133.4" cy="58.2" r="3.08" fill="#2b2520" stroke="none"/><path d="M115.2,68.0 q9.799999999999999,9.799999999999999 19.599999999999998,0" fill="none"/>
+<rect x="108" y="22" width="34" height="22" rx="3" fill="#2e9c8a"/>
+<rect x="104" y="40" width="42" height="6" rx="3" fill="#2e9c8a"/>
+<path d="M116,84 l9,6 l9,-6 v12 l-9,-6 l-9,6z" fill="#c0392b"/>
+</g><text x="125" y="39" text-anchor="middle" font-size="14" font-family="Hiragino Maru Gothic ProN, Yu Gothic, Meiryo, sans-serif" font-weight="700" fill="#fff">ア</text></svg>

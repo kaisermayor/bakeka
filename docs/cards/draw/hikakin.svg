@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><radialGradient id="bg" cx=".5" cy=".5" r=".7"><stop offset="0" stop-color="#fff3b0"/><stop offset="1" stop-color="#e6a91a"/></radialGradient></defs>
+<rect width="250" height="150" fill="url(#bg)"/><path d="M40,16 Q40,30 54,30 Q40,30 40,44 Q40,30 26,30 Q40,30 40,16Z" fill="#ffd84a" stroke="none"/><path d="M212,22 Q212,40 230,40 Q212,40 212,58 Q212,40 194,40 Q212,40 212,22Z" fill="#ffd84a" stroke="none"/><path d="M200,108 Q200,118 210,118 Q200,118 200,128 Q200,118 190,118 Q200,118 200,108Z" fill="#ffd84a" stroke="none"/><path d="M52,101 Q52,112 63,112 Q52,112 52,123 Q52,112 41,112 Q52,112 52,101Z" fill="#ffd84a" stroke="none"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<rect x="88" y="74" width="74" height="72" fill="#25335a"/>
+<rect x="95" y="14" width="60" height="60" fill="#f2c79a"/>
+<rect x="95" y="14" width="60" height="14" fill="#4a2f1b"/>
+<rect x="99" y="36" width="52" height="13" rx="2" fill="#111"/>
+<path d="M115,62 h20" fill="none"/>
+<path d="M112,92 v40 M138,92 v40 M112,112 h26" stroke="#fff" stroke-width="7"/>
+</g></svg>

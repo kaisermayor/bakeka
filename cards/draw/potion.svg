@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9ecff"/><stop offset="1" stop-color="#7fa8e8"/></linearGradient></defs><rect width="250" height="150" fill="url(#bg)"/><path d="M40,22 Q40,34 52,34 Q40,34 40,46 Q40,34 28,34 Q40,34 40,22Z" fill="#fff" stroke="none"/><path d="M206,15 Q206,30 221,30 Q206,30 206,45 Q206,30 191,30 Q206,30 206,15Z" fill="#fff" stroke="none"/><path d="M214,103 Q214,112 223,112 Q214,112 214,121 Q214,112 205,112 Q214,112 214,103Z" fill="#fff" stroke="none"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<rect x="113" y="20" width="24" height="14" rx="3" fill="#a5743f"/>
+<rect x="110" y="34" width="30" height="24" fill="#e9f4ff"/>
+<circle cx="125" cy="96" r="44" fill="#e9f4ff"/>
+<path d="M83,96 a42,42 0 0 0 84,0 q-20,-10 -42,0 q-22,10 -42,0z" fill="#ff7aa8"/>
+<circle cx="108" cy="80" r="6" fill="#fff" stroke="none"/>
+<path d="M125,112 c-6,-10 -20,-3 -11,8 l11,11 l11,-11 c9,-11 -5,-18 -11,-8z" fill="#fff" stroke-width="2"/>
+</g></svg>

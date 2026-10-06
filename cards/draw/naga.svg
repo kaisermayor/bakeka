@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><radialGradient id="bg" cx=".5" cy=".5" r=".75"><stop offset="0" stop-color="#fbffcc"/><stop offset="1" stop-color="#8dc63f"/></radialGradient></defs>
+<rect width="250" height="150" fill="url(#bg)"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M30,40 l-10,16 h8 l-8,20 l18,-24 h-8 l8,-12z M222,60 l-10,16 h8 l-8,20 l18,-24 h-8 l8,-12z" fill="#ffd84a"/>
+<path d="M98,96 h54 l10,50 h-74z" fill="#5b3fa0"/>
+<path d="M92,56 l-50,-26 l40,40z M158,56 l50,-26 l-40,40z" fill="#f2c79a"/>
+<circle cx="125" cy="62" r="30" fill="#f2c79a"/>
+<path d="M98,44 l4,-22 l8,14 l6,-18 l7,16 l6,-18 l6,16 l8,-14 l6,22z" fill="#4a3a20"/>
+<circle cx="113" cy="62" r="9" fill="#fff"/><circle cx="137" cy="62" r="9" fill="#fff"/>
+<circle cx="113" cy="62" r="3.5" fill="#2b2520"/><circle cx="137" cy="62" r="3.5" fill="#2b2520"/>
+<path d="M104,62 h-8 M146,62 h8 M122,62 h6" fill="none"/>
+<path d="M114,80 q11,8 22,0" fill="none"/>
+<path d="M196,104 l7,12 l13,-3 l-5,12 l11,7 l-13,3 l2,13 l-11,-8 l-9,9 l-2,-13 l-13,-1 l10,-8 l-7,-11 l13,3z" fill="#ffd84a"/>
+</g><text x="205" y="132" text-anchor="middle" font-size="11" font-family="Hiragino Maru Gothic ProN, Yu Gothic, Meiryo, sans-serif" font-weight="700" fill="#2b2520">SP</text></svg>

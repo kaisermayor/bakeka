@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9c9c9"/><stop offset="1" stop-color="#8d8d8d"/></linearGradient></defs><rect width="250" height="150" fill="url(#bg)"/><path d="M0,110 H250" stroke="#fff" stroke-width="4" stroke-dasharray="20 14"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="90" cy="118" rx="58" ry="18" fill="#1b1b1b"/>
+<path d="M78,118 l-8,-40 M100,118 l8,-42" stroke-width="7"/>
+<path d="M62,78 h16 M100,76 h16" stroke-width="8"/>
+<g transform="rotate(-20 190 44)">
+<ellipse cx="190" cy="44" rx="40" ry="14" fill="#6f6f6f"/>
+<path d="M162,44 h56 M175,34 v20 M190,31 v26 M205,34 v20" stroke-width="2"/></g>
+<path d="M150,70 q10,-10 20,0 M140,84 q10,-10 20,0" fill="none" stroke-width="2"/>
+</g><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round"><path d="M60,36 l-10,18 l20,-15" fill="#fff"/><rect x="10" y="10" width="92" height="30" rx="15.0" fill="#fff"/><path d="M61,37 l-8,14 l15,-12" fill="#fff" stroke="none"/></g><text x="56.0" y="30.4" text-anchor="middle" font-size="15" font-family="Hiragino Maru Gothic ProN, Yu Gothic, Meiryo, sans-serif" font-weight="700" fill="#2b2520" stroke="none">うわー!</text></svg>

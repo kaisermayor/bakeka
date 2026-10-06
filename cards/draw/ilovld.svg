@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6e3ff"/><stop offset="1" stop-color="#d7a8ef"/></linearGradient></defs><rect width="250" height="150" fill="url(#bg)"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M150,22 h70 v50 q0,46 -35,66 q-35,-20 -35,-66z" fill="#4a7fd1"/>
+<path d="M185,68 c-10,-16 -32,-4 -18,14 l18,18 l18,-18 c14,-18 -8,-30 -18,-14z" fill="#ff5a7a"/>
+<path d="M70,84 v34 M70,118 l-14,26 M70,118 l14,26" fill="none" stroke-width="5"/>
+<path d="M70,94 l40,-4 M70,94 l44,14" fill="none" stroke-width="5"/>
+<circle cx="70" cy="60.0" r="24.0" fill="#fde3c3"/><circle cx="61.0" cy="55.5" r="3.3000000000000003" fill="#2b2520" stroke="none"/><circle cx="79.0" cy="55.5" r="3.3000000000000003" fill="#2b2520" stroke="none"/><path d="M59.5,66.0 q10.5,10.5 21.0,0" fill="none"/>
+<path d="M70,54 c-4,-7 -14,-2 -8,6 l8,8 l8,-8 c6,-8 -4,-13 -8,-6z" fill="#ff5a7a" stroke="none"/>
+</g><text x="185" y="48" text-anchor="middle" font-size="18" font-family="Hiragino Maru Gothic ProN, Yu Gothic, Meiryo, sans-serif" font-weight="700" fill="#fff">LD</text></svg>
