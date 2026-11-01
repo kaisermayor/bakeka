@@ -41,7 +41,8 @@ function audio() {
     SND.noiseBuf = buf;
     applyVol();
   }
-  if (SND.ctx.state === 'suspended') SND.ctx.resume().catch(() => {});
+  // iPhone は、電話・通知・ほかのアプリの音のあとに 'interrupted' になることがある。止まったままにしない
+  if (SND.ctx.state !== 'running') SND.ctx.resume().catch(() => {});
   return SND.ctx;
 }
 
