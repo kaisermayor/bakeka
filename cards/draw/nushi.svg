@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 150"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5ecdf"/><stop offset="1" stop-color="#d9c2a0"/></linearGradient></defs><rect width="250" height="150" fill="url(#bg)"/><g stroke="#2b2520" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" fill="none">
+<rect x="20" y="128" width="60" height="14" rx="2" fill="#c0392b"/>
+<rect x="24" y="114" width="54" height="14" rx="2" fill="#3f7fbf"/>
+<rect x="18" y="100" width="58" height="14" rx="2" fill="#3fa36b"/>
+<rect x="26" y="86" width="50" height="14" rx="2" fill="#f5b041"/>
+<rect x="22" y="72" width="56" height="14" rx="2" fill="#9b6ce0"/>
+<rect x="28" y="58" width="46" height="14" rx="2" fill="#e86a8a"/>
+<rect x="30" y="44" width="44" height="12" rx="2" fill="#5ab0b0" transform="rotate(-8 52 50)"/>
+<rect x="172" y="128" width="62" height="14" rx="2" fill="#3f7fbf"/>
+<rect x="176" y="114" width="56" height="14" rx="2" fill="#f5b041"/>
+<rect x="170" y="100" width="60" height="14" rx="2" fill="#c0392b"/>
+<rect x="178" y="86" width="50" height="14" rx="2" fill="#3fa36b"/>
+<rect x="174" y="72" width="56" height="14" rx="2" fill="#e86a8a"/>
+<rect x="180" y="60" width="44" height="12" rx="2" fill="#9b6ce0" transform="rotate(6 202 66)"/>
+<path d="M98,64Q96,30 125,30Q154,30 152,64V96H98z" fill="#4a2e1c"/>
+<rect x="98" y="86" width="54" height="62" rx="12" fill="#7b9e5a"/>
+<circle cx="125" cy="60" r="23" fill="#fde3c3"/>
+<path d="M102,58Q104,36 125,36Q146,36 148,58Q140,48 125,48Q110,48 102,58z" fill="#4a2e1c"/>
+<circle cx="116" cy="63" r="7" fill="#fff" fill-opacity=".5"/><circle cx="134" cy="63" r="7" fill="#fff" fill-opacity=".5"/>
+<path d="M123,63h4M113,63q3,3 6,0M131,63q3,3 6,0" stroke-width="2.5"/>
+<path d="M90,92Q108,84 125,92Q142,84 160,92V128Q142,120 125,128Q108,120 90,128z" fill="#c0392b"/>
+<path d="M94,90Q110,82 125,90Q140,82 156,90V124Q140,116 125,124Q110,116 94,124z" fill="#fff"/>
+<path d="M125,90V124"/>
+<path d="M100,98q10-4 20,0M100,106q10-4 20,0M130,98q10-4 20,0M130,106q10-4 20,0" stroke="#bbb" stroke-width="2"/>
+<circle cx="92" cy="112" r="6.5" fill="#fde3c3"/><circle cx="158" cy="112" r="6.5" fill="#fde3c3"/>
+<rect x="86" y="136" width="78" height="14" rx="2" fill="#5ab0b0"/>
+</g></svg>

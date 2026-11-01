@@ -157,6 +157,10 @@ function power(pi, slot) {
   for (const fp of G.players) {
     if (fp.field && def(fp.field).powerMod) v += def(fp.field).powerMod(API, { owner: fp.i, monOwner: pi, mon: m });
   }
+  // 怪談マニアなど、場にいるモンスターがほかのモンスターのパワーを変える
+  G.players.forEach((q, qi) => q.mons.forEach((x, s) => {
+    if (x && def(x.c).aura && effectsOn(qi, s)) v += def(x.c).aura(API, qi, pi, m);
+  }));
   return Math.max(0, v);
 }
 
@@ -196,9 +200,16 @@ function destroy(pi, s, why = 'effect') {
     log(`「${nm(m.c)}」は破壊されない！`);
     return false;
   }
+  const back = has(pi, s, 'toHand'); // 保健室の常連など、破壊されたら手札にもどる
   clearSlot(pi, s);
-  p.grave.push(m.c);
-  log(`${p.name}の「${nm(m.c)}」が破壊された`);
+  if (back) {
+    p.hand.push(m.c);
+    mark(pi, [m.c], 'grave');
+    log(`${p.name}の「${nm(m.c)}」が破壊されて、手札にもどった`);
+  } else {
+    p.grave.push(m.c);
+    log(`${p.name}の「${nm(m.c)}」が破壊された`);
+  }
   return true;
 }
 
@@ -806,7 +817,7 @@ function aiLethal(pi) {
   const hits = (a0, b, life, t, i) => {
     const a = [...a0], ap = A[i].pw;
     a[i]--;
-    if (t && A[i].brk) { // わなで攻撃したモンスターを破壊される
+    if (t && (A[i].brk || trap !== 'manhole')) { // わなで攻撃したモンスターを破壊される（手札にもどす・エネルギーを落とすわなは、ゾンビにも効く）
       const a2 = [...a];
       a2[i] = -1;
       if (!wins(a2, b, life, 0)) return false;
@@ -1252,7 +1263,7 @@ function designHTML(c, o, cls) {
   const nl = [...d.name].length, tl = [...d.text].length;
   const ns = nl <= 5 ? 'n1' : nl <= 8 ? 'n2' : nl <= 13 ? 'n3' : 'n4';
   const ts = tl <= 30 ? 't1' : tl <= 60 ? 't2' : tl <= 100 ? 't3' : 't4';
-  const art = d.img ? `style="background-image:url('cards/draw/${c.id}.svg')"` : '';
+  const art = d.img || d.draw ? `style="background-image:url('cards/draw/${c.id}.svg')"` : '';
   return `<div class="${cls} dz"><div class="dz-in">
       <div class="dz-head"><span class="dz-cost ${k !== d.cost ? 'changed' : ''}">${fmt(k)}</span><div class="dz-name ${ns}"><b>${esc(d.name)}</b>${d.tribe ? `<small>${esc(d.tribe)}</small>` : ''}</div></div>
       <div class="dz-art" ${art}></div>
@@ -1296,7 +1307,7 @@ function monSlotHTML(p, s) {
   const pips = m.energy.length > 4
     ? `<span class="pip"></span><b>×${m.energy.length}</b>`
     : m.energy.map(() => '<span class="pip"></span>').join('');
-  const off = !effectsOn(p.i, s) && (def(m.c).onSummon || def(m.c).powerFn || def(m.c).noAttack || def(m.c).unbreakable || def(m.c).ability || def(m.c).turnStart || def(m.c).noEnergy);
+  const off = !effectsOn(p.i, s) && (def(m.c).onSummon || def(m.c).powerFn || def(m.c).noAttack || def(m.c).unbreakable || def(m.c).toHand || def(m.c).aura || def(m.c).ability || def(m.c).turnStart || def(m.c).noEnergy);
   return `<div class="slot mon filled ${canActMon(p.i, s) ? 'can' : ''} ${myTurn() && p.i === UI.viewer && canAttack(p.i, s) ? 'dragok' : ''}" data-zone="mon" data-p="${p.i}" data-s="${s}" data-cid="${m.c.uid}" data-z="mon">
       ${cardHTML(m.c, { power: power(p.i, s) })}
       ${m.equip ? '<span class="tag eq">そうび</span>' : ''}

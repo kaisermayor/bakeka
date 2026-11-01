@@ -17,6 +17,9 @@
  *   check(api, me, slot)         場の様子が変わるたびに調べる（自動でもどる など）
  *   ability                      メインフェーズにタップして使える能力
  *   noAttack / noEnergy / unbreakable / silence / ld / fromGrave   決まった性質
+ *   toHand                       破壊されたとき、墓地ではなく手札にもどる
+ *   aura(api, me, monOwner, mon) 場にいるあいだ、モンスターのパワーを変える（変える量を返す）
+ *   draw: true                   写真がなく、cards/draw/<id>.svg の絵だけあるカード（img は null）
  *
  * ルール：カードに「墓地」と書いてあれば、エネルギー墓地もふくむ（枚数は api.graveCount で数える）
  *   aiUse(api, me)               CPU がこのカードを使うかどうか
@@ -477,7 +480,228 @@ const CARD_DB = {
     },
     aiTrap: (api, me, ctx) => api.breakable(ctx.attacker, ctx.slot), // ゾンビなど、破壊できない相手には使わない
   },
+  /* ───────── 小学校に一人はいたやつ（オリジナルのカード。絵は cards/draw だけ） ───────── */
+
+  gyunyu: {
+    id: 'gyunyu', name: '牛乳おかわり王', tribe: 'しょうがくせい', type: 'monster', cost: 2, power: 1800,
+    img: null, draw: true,
+    text: '出たとき、自分のエネルギー墓地からエネルギーを1枚このモンスターにつける。',
+    async onSummon(api, me, slot) {
+      const n = api.attachFromEgrave(me, slot, 1);
+      api.log(n ? 'エネルギー墓地から1枚を「牛乳おかわり王」につけた' : 'エネルギー墓地にエネルギーがないので、効果は空振り');
+    },
+  },
+
+  shitsumon: {
+    id: 'shitsumon', name: '質問マシーン', tribe: 'しょうがくせい', type: 'monster', cost: 1, power: 1000,
+    img: null, draw: true,
+    text: '出たとき、カードを2枚引く。',
+    async onSummon(api, me) {
+      const n = api.draw(me, 2);
+      api.log(`${api.player(me).name}はカードを${n}枚引いた`);
+    },
+  },
+
+  ballman: {
+    id: 'ballman', name: 'ボール独占マン', tribe: 'しょうがくせい', type: 'monster', cost: 3, power: 2200,
+    img: null, draw: true,
+    text: '出たとき、相手のモンスター1体についているエネルギーを1枚、相手のエネルギー墓地に送る。',
+    async onSummon(api, me) {
+      const oi = 1 - me, o = api.player(oi);
+      const t = o.mons.map((m, i) => (m && m.energy.length ? i : -1)).filter(i => i >= 0);
+      if (!t.length) { api.log('エネルギーのついた相手モンスターがいないので、効果は空振り'); return; }
+      const s = await api.ask(me, {
+        title: 'ボール独占マンの効果',
+        text: 'エネルギーを1枚とりあげる相手のモンスターをえらんでください。',
+        options: t.map(i => ({ card: o.mons[i].c, label: `${api.name(o.mons[i].c)}（エネ${o.mons[i].energy.length}）`, value: i })),
+        ai: () => [...t].sort((a, b) => api.power(oi, b) - api.power(oi, a))[0],
+      });
+      o.egrave.push(o.mons[s].energy.pop());
+      api.log(`${o.name}の「${api.name(o.mons[s].c)}」のエネルギーを1枚エネルギー墓地に送った`);
+    },
+  },
+
+  moteru: {
+    id: 'moteru', name: '足が速いだけでモテるやつ', short: 'モテるやつ', tribe: 'しょうがくせい', type: 'monster', cost: 2, power: 1700,
+    img: null, draw: true,
+    text: '出たとき、自分の手札のエネルギーを1枚このモンスターにつける（エネルギーフェーズの1枚とは別）。手札にないときは、エネルギー墓地から1枚つける。',
+    async onSummon(api, me, slot) {
+      const p = api.player(me), i = p.hand.findIndex(c => c.id === 'energy');
+      if (i >= 0) {
+        p.mons[slot].energy.push(p.hand.splice(i, 1)[0]);
+        api.log('手札のエネルギーを1枚「足が速いだけでモテるやつ」につけた');
+      } else if (api.attachFromEgrave(me, slot, 1)) {
+        api.log('エネルギー墓地から1枚を「足が速いだけでモテるやつ」につけた');
+      } else {
+        api.log('エネルギーがないので、効果は空振り');
+      }
+    },
+  },
+
+  iincho: {
+    id: 'iincho', name: '学級委員', tribe: 'しょうがくせい', type: 'monster', cost: 3, power: 1800,
+    img: null, draw: true,
+    text: 'パワーは、自分の場にいるほかのモンスター1体につき＋400。',
+    powerFn: (api, me, m) => 1800 + 400 * api.player(me).mons.filter(x => x && x !== m).length,
+  },
+
+  koedeka: {
+    id: 'koedeka', name: '声がでかいやつ', tribe: 'しょうがくせい', type: 'monster', cost: 1, power: 1300,
+    img: null, draw: true,
+    text: '出たとき、相手がふせているわなを墓地に送る。',
+    async onSummon(api, me) {
+      const oi = 1 - me, o = api.player(oi);
+      if (!o.trap || o.trap.faceUp) { api.log('相手はわなをふせていないので、効果は空振り'); return; }
+      const name = api.name(o.trap.c);
+      api.trapToGrave(oi);
+      api.toast(`大声でばらした！ わな「${name}」は墓地へ`, 'trap');
+      api.log(`${o.name}のわな「${name}」を墓地に送った`);
+    },
+  },
+
+  iitsukeru: {
+    id: 'iitsukeru', name: '先生にいいつける', type: 'magic', cost: 2,
+    img: null, draw: true,
+    text: '相手のモンスターを1体えらんで、持ち主の手札にもどす（ついていたエネルギーはエネルギー墓地へ）。',
+    canCast: (api, me) => (api.opp(me).mons.some(Boolean) ? true : '相手の場にモンスターがいません'),
+    async onCast(api, me) {
+      const oi = 1 - me, o = api.player(oi);
+      const t = o.mons.map((m, i) => (m ? i : -1)).filter(i => i >= 0);
+      const val = i => Math.min(api.power(oi, i), 5000) + 500 * o.mons[i].energy.length;
+      const s = await api.ask(me, {
+        title: '先生にいいつける',
+        text: '手札にもどす相手のモンスターをえらんでください。',
+        options: t.map(i => ({ card: o.mons[i].c, label: `${api.name(o.mons[i].c)}（パワー${api.fmt(api.power(oi, i))}）`, value: i })),
+        ai: () => [...t].sort((a, b) => val(b) - val(a))[0],
+      });
+      const name = api.name(o.mons[s].c);
+      api.bounce(oi, s);
+      api.log(`「${name}」は${o.name}の手札にもどった`);
+    },
+    aiUse: (api, me) => api.opp(me).mons.some((m, i) => m && (m.energy.length || api.power(1 - me, i) >= 1500)),
+  },
+
+  chime: {
+    id: 'chime', name: 'チャイムが鳴った', type: 'trap', cost: 0,
+    img: null, draw: true, trigger: 'opponentAttack',
+    text: '相手のモンスターが攻撃するとき発動できる。その攻撃を止めて、攻撃してきたモンスターを持ち主の手札にもどす（ついていたエネルギーはエネルギー墓地へ）。',
+    async onTrap(api, me, ctx) {
+      api.log('わな「チャイムが鳴った」発動！ 休み時間はおしまい');
+      api.toast('わな「チャイムが鳴った」発動！', 'trap');
+      api.trapToGrave(me);
+      await api.sleep(500);
+      const name = api.name(api.player(ctx.attacker).mons[ctx.slot].c);
+      api.bounce(ctx.attacker, ctx.slot);
+      api.log(`「${name}」は手札にもどった`);
+      return { stop: true };
+    },
+    aiTrap: (api, me, ctx) => aiWorthTrap(api, me, ctx),
+  },
+
+  amari: {
+    id: 'amari', name: '給食のあまりをねらうやつ', short: 'あまりねらい', tribe: 'しょうがくせい', type: 'monster', cost: 1, power: 1300,
+    img: null, draw: true,
+    text: '出たとき、相手のエネルギー墓地からエネルギーを1枚とって、このモンスターにつける。',
+    async onSummon(api, me, slot) {
+      const p = api.player(me), o = api.opp(me);
+      if (!o.egrave.length) { api.log('相手のエネルギー墓地が空なので、効果は空振り'); return; }
+      p.mons[slot].energy.push(o.egrave.pop());
+      api.log('相手のエネルギー墓地からエネルギーを1枚とって、「給食のあまりをねらうやつ」につけた');
+    },
+  },
+
+  hokenshitsu: {
+    id: 'hokenshitsu', name: '保健室の常連', tribe: 'しょうがくせい', type: 'monster', cost: 2, power: 1800,
+    img: null, draw: true, toHand: true,
+    text: 'このモンスターが破壊されたとき、墓地ではなく手札にもどる（ついていたエネルギーはエネルギー墓地へ）。',
+  },
+
+  mushi: {
+    id: 'mushi', name: '虫博士', tribe: 'しょうがくせい', type: 'monster', cost: 3, power: 2100,
+    img: null, draw: true,
+    text: '出たとき、相手は自分の手札を2枚えらんで捨てる（エネルギーはエネルギー墓地へ）。',
+    async onSummon(api, me) {
+      const oi = 1 - me, o = api.player(oi);
+      if (!o.hand.length) { api.log('相手の手札がないので、効果は空振り'); return; }
+      for (let k = 0; k < 2 && o.hand.length; k++) {
+        const uid = await api.ask(oi, {
+          title: '虫博士の効果',
+          text: '虫を見せられた！ 捨てる手札を1枚えらんでください。',
+          options: o.hand.map(c => ({ card: c, label: api.name(c), value: c.uid })),
+          ai: () => [...o.hand].sort((a, b) => api.cardValue(a) - api.cardValue(b))[0].uid,
+        });
+        const i = o.hand.findIndex(c => c.uid === uid);
+        const c = o.hand.splice(i, 1)[0];
+        api.toGrave(oi, [c]);
+        api.log(`${o.name}は「${api.name(c)}」を捨てた`);
+      }
+    },
+  },
+
+  kaidan: {
+    id: 'kaidan', name: '怪談マニア', tribe: 'しょうがくせい', type: 'monster', cost: 2, power: 1600,
+    img: null, draw: true,
+    text: 'このモンスターが場にいるあいだ、相手のモンスターのパワーは400下がる。',
+    aura: (api, me, monOwner) => (monOwner !== me ? -400 : 0),
+  },
+
+  nushi: {
+    id: 'nushi', name: '図書室のヌシ', tribe: 'しょうがくせい', type: 'monster', cost: 3, power: 1800,
+    img: null, draw: true,
+    text: 'パワーは、自分の墓地（エネルギー墓地もふくむ）のカード1枚につき＋150。',
+    powerFn: (api, me) => 1800 + 150 * api.graveCount(me),
+  },
+
+  renraku: {
+    id: 'renraku', name: '連絡帳', type: 'magic', cost: 1,
+    img: null, draw: true,
+    text: 'カードを2枚引く。',
+    canCast: (api, me) => (api.player(me).deck.length ? true : '山札がありません'),
+    async onCast(api, me) {
+      const n = api.draw(me, 2);
+      api.log(`${api.player(me).name}はカードを${n}枚引いた`);
+    },
+    aiUse: (api, me) => api.player(me).deck.length >= 6,
+  },
+
+  gum: {
+    id: 'gum', name: 'ガムふんだ', type: 'trap', cost: 0,
+    img: null, draw: true, trigger: 'opponentSummon',
+    text: '相手がモンスターを出したとき発動できる。そのモンスターを持ち主の手札にもどす（「出たとき」の効果は使えない）。',
+    async onTrap(api, me, ctx) {
+      api.log('わな「ガムふんだ」発動！');
+      api.toast('わな「ガムふんだ」発動！', 'trap');
+      api.trapToGrave(me);
+      await api.sleep(600);
+      const name = api.name(api.player(ctx.summoner).mons[ctx.slot].c);
+      api.bounce(ctx.summoner, ctx.slot);
+      api.log(`「${name}」は手札にもどった`);
+    },
+  },
+
+  roka: {
+    id: 'roka', name: 'ろうかを走るな！', type: 'trap', cost: 0,
+    img: null, draw: true, trigger: 'opponentAttack',
+    text: '相手のモンスターが攻撃するとき発動できる。攻撃してきたモンスターについているエネルギーをすべてエネルギー墓地に送り、その攻撃を止める。',
+    async onTrap(api, me, ctx) {
+      const o = api.player(ctx.attacker), m = o.mons[ctx.slot];
+      const n = m.energy.length;
+      o.egrave.push(...m.energy.splice(0));
+      api.log(`わな「ろうかを走るな！」発動！ 「${api.name(m.c)}」のエネルギー${n}枚がエネルギー墓地へ`);
+      api.toast('わな「ろうかを走るな！」発動！', 'trap');
+      api.trapToGrave(me);
+      return { stop: true };
+    },
+    aiTrap: (api, me, ctx) => aiWorthTrap(api, me, ctx),
+  },
 };
+
+// CPU用：攻撃を止めるわなは、ライフガードが2枚以上こわれる攻撃・負けそうなとき・自分のモンスターがやられるときに使う
+function aiWorthTrap(api, me, ctx) {
+  const ap = api.power(ctx.attacker, ctx.slot), life = api.player(me).life.length;
+  if (ctx.target === 'player') return life <= 1 || Math.floor(ap / 1000) >= 2;
+  return api.breakable(me, ctx.target) && ap >= api.power(me, ctx.target);
+}
 
 /* デッキ（エネルギー10枚＋通常カード15枚）
  * デッキ1・2は写真のカードそのまま（ウィザースケルトンは絵ちがいの2枚） */
@@ -517,5 +741,16 @@ const DECKS = [
     name: '鉄壁と山札切れ', key: '守りながら相手の山札をけずる',
     cards: [['energy', 10], ['apanman', 2], ['zombie', 2], ['morinokuma', 2], ['mattekure', 2], ['sarabada', 2],
       ['manhole', 2], ['saiaku', 1], ['shoki', 2]],
+  },
+  /* ───── 小学校に一人はいたやつ（オリジナルのカードだけ） ───── */
+  {
+    name: '休み時間の主役たち', key: 'すぐエネルギーをつけて、どんどん攻める',
+    cards: [['energy', 10], ['gyunyu', 2], ['shitsumon', 2], ['ballman', 2], ['moteru', 2], ['iincho', 1],
+      ['koedeka', 2], ['iitsukeru', 2], ['chime', 2]],
+  },
+  {
+    name: '教室のくせ者たち', key: '相手をこわがらせて、手札をけずって、じわじわ勝つ',
+    cards: [['energy', 10], ['amari', 2], ['hokenshitsu', 2], ['mushi', 2], ['kaidan', 2], ['nushi', 2],
+      ['renraku', 1], ['gum', 2], ['roka', 2]],
   },
 ];

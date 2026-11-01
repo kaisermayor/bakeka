@@ -26,7 +26,7 @@
 |---|---|
 | `index.html` | 画面・CSS・タイトル／ルール／音の設定／オンライン部屋のHTML。**`<!doctype><html><head>` を書かない形**（claude.ai のページ用。公開時に `tools/build_site.py` が付ける） |
 | `game.js` | ルール処理、描画、アニメーション、ドラッグ操作、CPU、デッキの中身の画面 |
-| `cards.js` | `CARD_DB`（29種類＋エネルギー）と `DECKS`（7デッキ）。カードを足すのはここ。先頭コメントにフックの説明あり |
+| `cards.js` | `CARD_DB`（45種類＋エネルギー。うち16種類は「小学校に一人はいたやつ」のオリジナル）と `DECKS`（9デッキ）。カードを足すのはここ。先頭コメントにフックの説明あり |
 | `online.js` | オンライン対戦（PeerJS）。`NET` オブジェクト |
 | `sound.js` | BGM と効果音（Web Audio でその場で作る。音声ファイルなし）、音量設定 |
 | `cards/*.jpg` | 原画の写真を切り抜いて掃除したもの（400×600） |
@@ -45,7 +45,7 @@
 - **非同期の流れ**：画面からの行動は `run(fn)` で実行（`UI.busy` を立てる）。勝敗は `GameOver` 例外、わな「アキザワ」のターン飛ばしは `SkipTurn` 例外で抜けて、`run` が受け止める。
 - **質問**：`ask(pi, q)` が、人には `modal()`、CPU には `q.ai()`、オンラインの相手には `NET.remoteAsk()` で聞く。カード効果の選択はすべてこれを使う。
 - **行動の入口**：画面のボタンやドラッグは必ず `act(name, ...args)` を通す（`ACTIONS` = useCard / playerAttach / playerAttack / discardAttach / endTurn）。オンラインの相手側では、`act` がホストに送るだけになる。
-- **カード効果の道具**：`API`（`api.ask`, `api.destroy`, `api.summon`, `api.toGrave`, `api.graveCount`, `api.mark` など）。フック：`onSummon`, `onCast`, `canCast`, `trigger`+`onTrap`, `powerFn`, `costFn`, `turnStart`, `check`, `ability`, 性質フラグ `noAttack / noEnergy / unbreakable / silence / ld / fromGrave`, CPU用 `aiUse`。
+- **カード効果の道具**：`API`（`api.ask`, `api.destroy`, `api.summon`, `api.toGrave`, `api.graveCount`, `api.mark` など）。フック：`onSummon`, `onCast`, `canCast`, `trigger`+`onTrap`, `powerFn`, `costFn`, `turnStart`, `check`, `ability`, 性質フラグ `noAttack / noEnergy / unbreakable / silence / ld / fromGrave / toHand`（toHand は破壊されたら手札へ）, ほかのモンスターのパワーを変える `aura`, CPU用 `aiUse` と `aiTrap`。写真がなく描いた絵（cards/draw）だけのカードは `img: null, draw: true`。
 - **効果の有無**：`effectsOn(pi, slot)`（相手の場に「モリのくま」がいると、そのプレイヤーのモンスター効果は消える。くま自身は常に有効）。`has(pi, s, flag)` で性質を調べる。
 - **自動で働く効果**：`settle()`（いまは「ヒカキン（仮）」が手札にもどる処理だけ）。
 - **描画**：`render()` は毎回 innerHTML で作り直し、`animateDiff()` が前後の `data-cid` の位置を比べて「出てくる／動く／消える」アニメーションをつける。演出関数は `fxAttack / fxClash / fxLife / fxTrap / fxDirect / fxPip`。`anim()` は「終わり」か「時間切れ」の早いほうで進む（画面が裏に回っても止まらないように）。
@@ -114,6 +114,11 @@
 - わな「I♡LD」：自分のライフガードがこわれたとき、こわれたカード1枚を L.D にする。
 - わな「まンほオる」：攻撃してきたモンスターを破壊する。自分のモンスター1体を破壊すれば、わなを場に残せる（表向き）。
 
+### 「小学校に一人はいたやつ」の16種類（2026-11-01 に追加。効果・数字はすべてこちらの案で、ユーザーの確認待ち）
+- 一覧と仮決めは、会社フォルダの `作業中/バケカ/2026-11-01_小学校カードとデッキ.md` にある。デッキは「休み時間の主役たち」「教室のくせ者たち」。
+- CPU同士の対戦で、いまある7デッキへの勝率は 47% と 39% になるまで数字を調整した。
+- 仮決め：効果でつけるエネルギーではアキザワは発動しない／保健室の常連はモリのくまがいると墓地へ／怪談マニアのパワー下げは重なる／手札にもどすとき、ケーキの下のカードは墓地へ。
+
 ---
 
 ## 5. 見た目・操作で決まっていること
@@ -170,6 +175,7 @@ git push origin main                # 1〜2分で https://kaisermayor.github.io/
 3. 原画の写真は小さく、少しぼやけている。「ぐちゃぐちゃ」は写真でアルバイトが重なっていたので、右側を白く消してある。ユーザーが1枚ずつの写真を送ってくれれば差しかえられる。
 4. 「今あるカードの感じで作って」は「いまのカードでデモデッキを作る」と受け取った。新しいカードを作ってほしいという意味なら、ユーザーが教えてくれることになっている。
 5. オンライン対戦の再接続、観戦、カードの公開範囲の調整はしていない。
+6. ユーザーは、個人名や他の作品の名前・絵を使わないカードで、システムだけ受け継いだ新しいカードゲームとして出すことを考えている（2026-11-01）。デッキを40枚にする案もある（いまの種類数では足りない、と伝え済み）。
 
 ---
 
