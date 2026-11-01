@@ -20,6 +20,7 @@
  *
  * ルール：カードに「墓地」と書いてあれば、エネルギー墓地もふくむ（枚数は api.graveCount で数える）
  *   aiUse(api, me)               CPU がこのカードを使うかどうか
+ *   aiTrap(api, me, ctx)         CPU がこのわなを発動するかどうか（ないときはいつも発動する）
  */
 
 const CARD_DB = {
@@ -435,6 +436,7 @@ const CARD_DB = {
       await api.sleep(600);
       api.destroy(ctx.summoner, ctx.slot);
     },
+    aiTrap: (api, me, ctx) => api.breakable(ctx.summoner, ctx.slot), // ゾンビなど、破壊できない相手には使わない
   },
 
   manhole: {
@@ -473,6 +475,7 @@ const CARD_DB = {
       }
       return { stop: !api.player(ctx.attacker).mons[ctx.slot] };
     },
+    aiTrap: (api, me, ctx) => api.breakable(ctx.attacker, ctx.slot), // ゾンビなど、破壊できない相手には使わない
   },
 };
 

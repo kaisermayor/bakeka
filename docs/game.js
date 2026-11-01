@@ -421,7 +421,7 @@ async function summon(pi, c, { stackOn = null, slot = null } = {}) {
       text: `${p.name}が「${nm(c)}」（パワー${fmt(power(pi, s))}）を出した。わな「${nm(o.trap.c)}」を発動しますか？`,
       card: o.trap.c,
       options: [{ label: '発動する', value: true, primary: true }, { label: '発動しない', value: false }],
-      ai: () => cost(pi, c) >= 2 || power(pi, s) >= 1600,
+      ai: () => (!td.aiTrap || td.aiTrap(API, oi, { summoner: pi, slot: s })) && (cost(pi, c) >= 2 || power(pi, s) >= 1600),
     });
     if (yes) {
       await fxTrap(oi);
@@ -605,7 +605,7 @@ async function attack(pi, slot, target) {
       text: `${p.name}の「${aName}」（パワー${fmt(ap)}）が${target === 'player' ? 'あなた' : tName}に攻撃してきた。わな「${nm(o.trap.c)}」を発動しますか？`,
       card: o.trap.c,
       options: [{ label: '発動する', value: true, primary: true }, { label: '発動しない', value: false }],
-      ai: () => true,
+      ai: () => !td.aiTrap || td.aiTrap(API, oi, { attacker: pi, slot, target }),
     });
     if (yes) {
       await fxTrap(oi);
@@ -768,23 +768,76 @@ function aiBlock(oi, ap, blockers) {
   return -1;
 }
 
-// 相手がいちばん上手にブロックしても、この攻撃回数でダイレクトアタックまで届くか
+// ブロックしてくる相手モンスター（エネルギーつき、狙ったモンスター以外）に負けるか
+function aiBlockedLoss(pi, s, target) {
+  if (!breakable(pi, s)) return false;
+  const oi = 1 - pi, ap = power(pi, s);
+  return slotsOf(G.players[oi]).some(i => i !== target && G.players[oi].mons[i].energy.length
+    && (power(oi, i) > ap || (power(oi, i) === ap && !breakable(oi, i))));
+}
+
+// 相手がいちばん上手にブロック（とわな）で守っても、ダイレクトアタックまで届くか。
+// 届くなら、最初に攻撃するモンスターの置き場を返す（届かなければ -1）。
+// ブロックで負けたモンスターは、残りのエネルギーの分の攻撃もなくなる。ブロックで負けた相手も同じ。
 function aiLethal(pi) {
   const oi = 1 - pi, o = G.players[oi], p = G.players[pi];
-  if (directBlocked(oi)) return false;
-  const attacks = [];
-  for (let s = 0; s < 3; s++) if (canAttack(pi, s)) for (let k = 0; k < p.mons[s].energy.length; k++) attacks.push(power(pi, s));
-  let blocks = slotsOf(o).reduce((t, i) => t + o.mons[i].energy.length, 0);
-  if (o.trap && def(o.trap.c).trigger === 'opponentAttack') blocks += o.trap.c.id === 'saiaku' ? 99 : 1;
-  if (attacks.length <= blocks) return false;
-  // 相手は強い攻撃からブロックすると考えて、残りの攻撃で届くかを数える
-  const rest = attacks.sort((a, b) => b - a).slice(blocks);
-  let life = o.life.length;
-  for (const a of rest) {
-    if (life === 0) return true;
-    life -= Math.min(life, Math.floor(a / 1000));
+  if (directBlocked(oi)) return -1;
+  const trap = o.trap && def(o.trap.c).trigger === 'opponentAttack' ? o.trap.c.id : null;
+  if (trap === 'saiaku') return -1;
+  // ブロックで失うものが少ない、エネルギー1枚のモンスターから試す
+  const A = [0, 1, 2].filter(s => canAttack(pi, s))
+    .sort((a, b) => p.mons[a].energy.length - p.mons[b].energy.length || power(pi, b) - power(pi, a))
+    .map(s => ({ s, pw: power(pi, s), brk: breakable(pi, s), n: p.mons[s].energy.length }));
+  const B = slotsOf(o).map(i => ({ pw: power(oi, i), brk: breakable(oi, i), n: o.mons[i].energy.length }));
+  // 1体で攻撃できる回数は「相手の守りの回数＋ライフガード＋1」より多くても意味がないので、そこで切る（計算を軽くする）
+  const guards = B.reduce((n, x) => n + x.n, 0) + (trap ? 1 + B.length : 0) + o.life.length + 1;
+  for (const x of A) x.n = Math.min(x.n, guards);
+  const memo = new Map();
+  // a・b：のこりのエネルギー（-1 は破壊された）。t：わなが場にあるか
+  const wins = (a, b, life, t) => {
+    const key = `${a}|${b}|${life}|${t}`;
+    if (!memo.has(key)) {
+      if (memo.size > 20000) throw new Error('aiLethal'); // 計算が多すぎるときは、届かないことにする
+      memo.set(key, A.some((x, i) => a[i] > 0 && hits(a, b, life, t, i)));
+    }
+    return memo.get(key);
+  };
+  // i番目のモンスターで攻撃したとき、相手のどの守り方でも届くか
+  const hits = (a0, b, life, t, i) => {
+    const a = [...a0], ap = A[i].pw;
+    a[i]--;
+    if (t && A[i].brk) { // わなで攻撃したモンスターを破壊される
+      const a2 = [...a];
+      a2[i] = -1;
+      if (!wins(a2, b, life, 0)) return false;
+      if (trap === 'manhole') { // 自分のモンスターを1体破壊して、わなを残す
+        for (let j = 0; j < B.length; j++) {
+          if (b[j] < 0 || !B[j].brk) continue;
+          const b2 = [...b];
+          b2[j] = -1;
+          if (!wins(a2, b2, life, 1)) return false;
+        }
+      }
+    }
+    for (let j = 0; j < B.length; j++) { // ブロックされてバトル
+      if (!(b[j] > 0)) continue;
+      const a2 = [...a], b2 = [...b];
+      b2[j]--;
+      if (ap >= B[j].pw && B[j].brk) b2[j] = -1;
+      if (ap <= B[j].pw && A[i].brk) a2[i] = -1;
+      if (!wins(a2, b2, life, t)) return false;
+    }
+    if (!life) return true; // ブロックされなければダイレクトアタック
+    return wins(a, b, life - Math.min(life, Math.floor(ap / 1000)), t);
+  };
+  const a = A.map(x => x.n), b = B.map(x => x.n), t = trap ? 1 : 0;
+  try {
+    const i = A.findIndex((x, k) => hits(a, b, o.life.length, t, k));
+    return i >= 0 ? A[i].s : -1;
+  } catch (e) {
+    if (e.message === 'aiLethal') return -1;
+    throw e;
   }
-  return false;
 }
 
 async function cpuTurn() {
@@ -826,11 +879,10 @@ async function cpuTurn() {
   render();
   await beat(500);
   for (let guard = 0; guard < 40; guard++) {
-    // 勝てる計算なら、プレイヤーを攻撃し続ける（ブロックで失うものが少ない、エネルギー1枚のモンスターから）
-    if (aiLethal(pi)) {
-      const order = [0, 1, 2].filter(s => canAttack(pi, s))
-        .sort((a, b) => p.mons[a].energy.length - p.mons[b].energy.length || power(pi, b) - power(pi, a));
-      await attack(pi, order[0], 'player');
+    // 勝てる計算なら、プレイヤーを攻撃し続ける
+    const ls = aiLethal(pi);
+    if (ls >= 0) {
+      await attack(pi, ls, 'player');
       await beat(500);
       continue;
     }
@@ -845,11 +897,12 @@ async function cpuTurn() {
         const dp = power(oi, t);
         let score = -1;
         if (!breakable(oi, t)) return; // 倒せない相手は狙わない
+        if (aiBlockedLoss(pi, s, t)) return; // ほかの強いモンスターにブロックされて負けるので狙わない
         if (ap > dp) score = 50 + Math.min(dp, 5000) / 100 + x.energy.length * 8; // エネルギーのついた相手を先に倒す
         else if (ap === dp && cardValue(x.c) > cardValue(m.c)) score = 10;
         if (score > 0 && (!best || score + bias > best.score)) best = { s, t, score: score + bias };
       });
-      const strongBlock = o.mons.some((x, t) => x && x.energy.length && power(oi, t) > ap);
+      const strongBlock = aiBlockedLoss(pi, s, 'player');
       let ps = -1;
       if (!o.life.length) ps = strongBlock || directBlocked(oi) ? -1 : 1000;
       else if (!strongBlock && ap >= 1000) ps = 30 + Math.min(Math.floor(ap / 1000), o.life.length) * 10;
